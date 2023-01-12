@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14.1-alpine
+    environment:
+      - POSTGRES_USER=clinic-service
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=clinic-db
+    ports:
+      - '5432:5432'
