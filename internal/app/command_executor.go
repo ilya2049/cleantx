@@ -42,11 +42,9 @@ func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) e
 		return domain.ErrDoctorNotFound
 	}
 
-	if len(doctorsOnCall) == 1 {
-		return domain.ErrAtLeastOneDoctorOneCall
+	if err := doctor.FinishShift(len(doctorsOnCall)); err != nil {
+		return err
 	}
-
-	doctor.FinishShift()
 
 	if err := e.repository.Update(ctx, doctor); err != nil {
 		return err

@@ -16,8 +16,14 @@ type Doctor struct {
 	OnCall bool
 }
 
-func (d *Doctor) FinishShift() {
+func (d *Doctor) FinishShift(doctorsOnCallCount int) error {
+	if doctorsOnCallCount == 1 {
+		return ErrAtLeastOneDoctorOneCall
+	}
+
 	d.OnCall = false
+
+	return nil
 }
 
 func (d *Doctor) TakeShift() {
