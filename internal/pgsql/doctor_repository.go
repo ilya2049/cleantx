@@ -99,7 +99,7 @@ func (r *DoctorRepository) FinishShift(ctx context.Context, doctorID int) (err e
 
 	defer func() {
 		if err != nil {
-			if err := tx.Rollback(ctx); err != nil {
+			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				log.Println("failed to finish shift: failed to rollback tx", err.Error())
 			}
 
