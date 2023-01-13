@@ -32,9 +32,18 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 }
 
 func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	doctor, err := e.repository.Get(ctx, doctorID)
+	doctorsOnCall, err := e.repository.ListDoctorsOnCall(ctx)
 	if err != nil {
 		return err
+	}
+
+	doctor := doctorsOnCall.Get(doctorID)
+	if doctor == nil {
+		return domain.ErrDoctorNotFound
+	}
+
+	if len(doctorsOnCall) == 1 {
+		return domain.ErrAtLeastOneDoctorOneCall
 	}
 
 	doctor.FinishShift()

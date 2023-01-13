@@ -2,6 +2,7 @@ package pgsql
 
 import (
 	"context"
+	"errors"
 
 	"cleantx/internal/domain"
 
@@ -24,6 +25,10 @@ func (r *DoctorRepository) Get(ctx context.Context, id int) (*domain.Doctor, err
 	row := r.db.QueryRow(ctx, `select name, on_call from doctors where id = $1;`, id)
 
 	if err := row.Scan(&doctor.Name, &doctor.OnCall); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrDoctorNotFound
+		}
+
 		return nil, err
 	}
 
@@ -42,4 +47,31 @@ func (r *DoctorRepository) Update(ctx context.Context, doctor *domain.Doctor) er
 	}
 
 	return nil
+}
+
+func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctors, error) {
+	doctors := domain.Doctors{}
+
+	rows, err := r.db.Query(ctx, `
+		select id, name from doctors where on_call = true;
+	`)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		doctor := domain.Doctor{
+			OnCall: true,
+		}
+
+		if err := rows.Scan(&doctor.ID, &doctor.Name); err != nil {
+			return nil, err
+		}
+
+		doctors = append(doctors, &doctor)
+	}
+
+	return doctors, nil
 }
