@@ -4,14 +4,20 @@ import (
 	"context"
 
 	"cleantx/internal/domain"
+	"cleantx/internal/pkg/sqldb"
 )
 
 type DoctorCommandExecutor struct {
+	txBeginner sqldb.TxBeginner
 	repository domain.DoctorRepository
 }
 
-func NewDoctorCommandExecutor(repository domain.DoctorRepository) *DoctorCommandExecutor {
+func NewDoctorCommandExecutor(
+	txBeginner sqldb.TxBeginner,
+	repository domain.DoctorRepository,
+) *DoctorCommandExecutor {
 	return &DoctorCommandExecutor{
+		txBeginner: txBeginner,
 		repository: repository,
 	}
 }
@@ -31,8 +37,15 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 	return nil
 }
 
-func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	doctorsOnCall, err := e.repository.ListDoctorsOnCall(ctx)
+func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) (err error) {
+	tx, err := e.txBeginner.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { err = sqldb.CloseTx(ctx, tx, err) }()
+
+	doctorsOnCall, err := e.repository.WithTx(tx).ListDoctorsOnCall(ctx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +59,7 @@ func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) e
 		return err
 	}
 
-	if err := e.repository.Update(ctx, doctor); err != nil {
+	if err := e.repository.WithTx(tx).Update(ctx, doctor); err != nil {
 		return err
 	}
 

@@ -3,6 +3,7 @@ package cli
 import (
 	"cleantx/internal/app"
 	"cleantx/internal/pgsql"
+	"cleantx/internal/pkg/sqldb"
 
 	"context"
 	"flag"
@@ -23,7 +24,8 @@ func ExecuteCommand(command func(context.Context, int, app.DoctorCommandExecutor
 	defer closeDBConn()
 
 	doctorRepository := pgsql.NewDoctorRepository(dbConn)
-	doctorCommandExecutor := app.NewDoctorCommandExecutor(doctorRepository)
+	txOpener := sqldb.NewTxBeginner(dbConn)
+	doctorCommandExecutor := app.NewDoctorCommandExecutor(txOpener, doctorRepository)
 
 	if err := command(context.Background(), *doctorID, *doctorCommandExecutor); err != nil {
 		log.Println(err)

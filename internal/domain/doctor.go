@@ -3,6 +3,8 @@ package domain
 import (
 	"context"
 	"errors"
+
+	"cleantx/internal/pkg/sqldb"
 )
 
 var (
@@ -46,4 +48,5 @@ type DoctorRepository interface {
 	Get(ctx context.Context, id int) (*Doctor, error)
 	Update(ctx context.Context, doctor *Doctor) error
 	ListDoctorsOnCall(ctx context.Context) (Doctors, error)
+	WithTx(sqldb.Tx) DoctorRepository
 }

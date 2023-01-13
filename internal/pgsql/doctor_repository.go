@@ -5,18 +5,23 @@ import (
 	"errors"
 
 	"cleantx/internal/domain"
+	"cleantx/internal/pkg/sqldb"
 
 	"github.com/jackc/pgx/v5"
 )
 
 type DoctorRepository struct {
-	db *pgx.Conn
+	db commandExecutor
 }
 
-func NewDoctorRepository(db *pgx.Conn) *DoctorRepository {
+func NewDoctorRepository(db commandExecutor) *DoctorRepository {
 	return &DoctorRepository{
 		db: db,
 	}
+}
+
+func (r *DoctorRepository) WithTx(tx sqldb.Tx) domain.DoctorRepository {
+	return NewDoctorRepository(tx.(commandExecutor))
 }
 
 func (r *DoctorRepository) Get(ctx context.Context, id int) (*domain.Doctor, error) {
