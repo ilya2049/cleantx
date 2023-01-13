@@ -21,9 +21,9 @@ func NewDoctorRepository(db *pgx.Conn) *DoctorRepository {
 func (r *DoctorRepository) Get(ctx context.Context, id int) (*domain.Doctor, error) {
 	doctor := domain.Doctor{ID: id}
 
-	row := r.db.QueryRow(ctx, `select name, is_on_shift from doctors where id = $1;`, id)
+	row := r.db.QueryRow(ctx, `select name, on_call from doctors where id = $1;`, id)
 
-	if err := row.Scan(&doctor.Name, &doctor.IsOnSift); err != nil {
+	if err := row.Scan(&doctor.Name, &doctor.OnCall); err != nil {
 		return nil, err
 	}
 
@@ -31,9 +31,9 @@ func (r *DoctorRepository) Get(ctx context.Context, id int) (*domain.Doctor, err
 }
 
 func (r *DoctorRepository) Update(ctx context.Context, doctor *domain.Doctor) error {
-	_, err := r.db.Exec(ctx, `update doctors set name=$1, is_on_shift=$2 where id=$3`,
+	_, err := r.db.Exec(ctx, `update doctors set name=$1, on_call=$2 where id=$3`,
 		doctor.Name,
-		doctor.IsOnSift,
+		doctor.OnCall,
 		doctor.ID,
 	)
 
