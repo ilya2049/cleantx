@@ -3,6 +3,7 @@ package pgsql
 import (
 	"context"
 	"errors"
+	"log"
 
 	"cleantx/internal/domain"
 
@@ -49,11 +50,25 @@ func (r *DoctorRepository) Update(ctx context.Context, doctor *domain.Doctor) er
 	return nil
 }
 
-func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctors, error) {
+func (*DoctorRepository) updateWithTx(ctx context.Context, tx pgx.Tx, doctor *domain.Doctor) error {
+	_, err := tx.Exec(ctx, `update doctors set name=$1, on_call=$2 where id=$3`,
+		doctor.Name,
+		doctor.OnCall,
+		doctor.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (*DoctorRepository) listDoctorsOnCall(ctx context.Context, tx pgx.Tx) (domain.Doctors, error) {
 	doctors := domain.Doctors{}
 
-	rows, err := r.db.Query(ctx, `
-		select id, name from doctors where on_call = true;
+	rows, err := tx.Query(ctx, `
+		select id, name from doctors where on_call = true for update;
 	`)
 	if err != nil {
 		return nil, err
@@ -74,4 +89,43 @@ func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctor
 	}
 
 	return doctors, nil
+}
+
+func (r *DoctorRepository) FinishShift(ctx context.Context, doctorID int) (err error) {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err != nil {
+			if err := tx.Rollback(ctx); err != nil {
+				log.Println("failed to finish shift: failed to rollback tx", err.Error())
+			}
+
+			return
+		}
+
+		err = tx.Commit(ctx)
+	}()
+
+	doctorsOnCall, err := r.listDoctorsOnCall(ctx, tx)
+	if err != nil {
+		return err
+	}
+
+	doctor := doctorsOnCall.Get(doctorID)
+	if doctor == nil {
+		return domain.ErrDoctorNotFound
+	}
+
+	if err := doctor.FinishShift(len(doctorsOnCall)); err != nil {
+		return err
+	}
+
+	if err := r.updateWithTx(ctx, tx, doctor); err != nil {
+		return err
+	}
+
+	return nil
 }

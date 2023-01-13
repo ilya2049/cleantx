@@ -45,5 +45,5 @@ func (doctors Doctors) Get(id int) *Doctor {
 type DoctorRepository interface {
 	Get(ctx context.Context, id int) (*Doctor, error)
 	Update(ctx context.Context, doctor *Doctor) error
-	ListDoctorsOnCall(ctx context.Context) (Doctors, error)
+	FinishShift(ctx context.Context, doctorID int) error
 }
