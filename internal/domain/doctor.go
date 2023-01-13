@@ -46,4 +46,8 @@ type DoctorRepository interface {
 	Get(ctx context.Context, id int) (*Doctor, error)
 	Update(ctx context.Context, doctor *Doctor) error
 	ListDoctorsOnCall(ctx context.Context) (Doctors, error)
+	WithTx(
+		ctx context.Context,
+		doAtomically func(context.Context, DoctorRepository) error,
+	) (err error)
 }

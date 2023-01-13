@@ -32,23 +32,25 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 }
 
 func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	doctorsOnCall, err := e.repository.ListDoctorsOnCall(ctx)
-	if err != nil {
-		return err
-	}
+	return e.repository.WithTx(ctx, func(ctx context.Context, tx domain.DoctorRepository) error {
+		doctorsOnCall, err := tx.ListDoctorsOnCall(ctx)
+		if err != nil {
+			return err
+		}
 
-	doctor := doctorsOnCall.Get(doctorID)
-	if doctor == nil {
-		return domain.ErrDoctorNotFound
-	}
+		doctor := doctorsOnCall.Get(doctorID)
+		if doctor == nil {
+			return domain.ErrDoctorNotFound
+		}
 
-	if err := doctor.FinishShift(len(doctorsOnCall)); err != nil {
-		return err
-	}
+		if err := doctor.FinishShift(len(doctorsOnCall)); err != nil {
+			return err
+		}
 
-	if err := e.repository.Update(ctx, doctor); err != nil {
-		return err
-	}
+		if err := e.repository.Update(ctx, doctor); err != nil {
+			return err
+		}
 
-	return nil
+		return nil
+	})
 }
