@@ -10,10 +10,10 @@ import (
 )
 
 type DoctorRepository struct {
-	db *pgx.Conn
+	db commandExecutor
 }
 
-func NewDoctorRepository(db *pgx.Conn) *DoctorRepository {
+func NewDoctorRepository(db commandExecutor) *DoctorRepository {
 	return &DoctorRepository{
 		db: db,
 	}
@@ -53,7 +53,7 @@ func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctor
 	doctors := domain.Doctors{}
 
 	rows, err := r.db.Query(ctx, `
-		select id, name from doctors where on_call = true;
+		select id, name from doctors where on_call = true for update;
 	`)
 	if err != nil {
 		return nil, err

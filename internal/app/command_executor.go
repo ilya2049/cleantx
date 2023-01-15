@@ -7,12 +7,17 @@ import (
 )
 
 type DoctorCommandExecutor struct {
-	repository domain.DoctorRepository
+	unitOfWorkProvider domain.UnitOfWorkProvider
+	repository         domain.DoctorRepository
 }
 
-func NewDoctorCommandExecutor(repository domain.DoctorRepository) *DoctorCommandExecutor {
+func NewDoctorCommandExecutor(
+	unitOfWorkProvider domain.UnitOfWorkProvider,
+	repository domain.DoctorRepository,
+) *DoctorCommandExecutor {
 	return &DoctorCommandExecutor{
-		repository: repository,
+		unitOfWorkProvider: unitOfWorkProvider,
+		repository:         repository,
 	}
 }
 
@@ -31,8 +36,17 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 	return nil
 }
 
-func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	doctorsOnCall, err := e.repository.ListDoctorsOnCall(ctx)
+func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) (err error) {
+	unitOfWork, err := e.unitOfWorkProvider.NewUnitOfWork(ctx)
+	if err != nil {
+		return err
+	}
+
+	defer func() { err = e.unitOfWorkProvider.CommitChanges(ctx, unitOfWork, err) }()
+
+	doctorRepository := unitOfWork.NewDoctorRepository(ctx)
+
+	doctorsOnCall, err := doctorRepository.ListDoctorsOnCall(ctx)
 	if err != nil {
 		return err
 	}
@@ -46,7 +60,7 @@ func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) e
 		return err
 	}
 
-	if err := e.repository.Update(ctx, doctor); err != nil {
+	if err := doctorRepository.Update(ctx, doctor); err != nil {
 		return err
 	}
 
