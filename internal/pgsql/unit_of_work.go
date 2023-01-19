@@ -48,6 +48,6 @@ type UnitOfWork struct {
 	tx pgx.Tx
 }
 
-func (s *UnitOfWork) NewDoctorRepository(ctx context.Context) domain.DoctorRepository {
+func (s *UnitOfWork) NewDoctorRepository() domain.DoctorRepository {
 	return NewDoctorRepository(s.tx)
 }

@@ -8,5 +8,5 @@ type UnitOfWorkProvider interface {
 }
 
 type UnitOfWork interface {
-	NewDoctorRepository(context.Context) DoctorRepository
+	NewDoctorRepository() DoctorRepository
 }

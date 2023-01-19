@@ -44,7 +44,7 @@ func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) (
 
 	defer func() { err = e.unitOfWorkProvider.CommitChanges(ctx, unitOfWork, err) }()
 
-	doctorRepository := unitOfWork.NewDoctorRepository(ctx)
+	doctorRepository := unitOfWork.NewDoctorRepository()
 
 	doctorsOnCall, err := doctorRepository.ListDoctorsOnCall(ctx)
 	if err != nil {
