@@ -23,7 +23,8 @@ func ExecuteCommand(command func(context.Context, int, app.DoctorCommandExecutor
 	defer closeDBConn()
 
 	doctorRepository := pgsql.NewDoctorRepository(dbConn)
-	doctorCommandExecutor := app.NewDoctorCommandExecutor(doctorRepository)
+	unitOfWorkProvider := pgsql.NewUnitOfWorkProvider(dbConn)
+	doctorCommandExecutor := app.NewDoctorCommandExecutor(unitOfWorkProvider, doctorRepository)
 
 	if err := command(context.Background(), *doctorID, *doctorCommandExecutor); err != nil {
 		log.Println(err)

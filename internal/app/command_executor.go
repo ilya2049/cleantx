@@ -7,12 +7,17 @@ import (
 )
 
 type DoctorCommandExecutor struct {
-	repository domain.DoctorRepository
+	unitOfWorkProvider domain.UnitOfWorkProvider
+	repository         domain.DoctorRepository
 }
 
-func NewDoctorCommandExecutor(repository domain.DoctorRepository) *DoctorCommandExecutor {
+func NewDoctorCommandExecutor(
+	unitOfWorkProvider domain.UnitOfWorkProvider,
+	repository domain.DoctorRepository,
+) *DoctorCommandExecutor {
 	return &DoctorCommandExecutor{
-		repository: repository,
+		unitOfWorkProvider: unitOfWorkProvider,
+		repository:         repository,
 	}
 }
 
@@ -32,8 +37,10 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 }
 
 func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	return e.repository.Atomic(ctx, func(ctx context.Context, tx domain.DoctorRepository) error {
-		doctorsOnCall, err := tx.ListDoctorsOnCall(ctx)
+	return e.unitOfWorkProvider.Atomic(ctx, func(ctx context.Context, uow domain.UnitOfWork) error {
+		doctorRepository := uow.NewDoctorRepository()
+
+		doctorsOnCall, err := doctorRepository.ListDoctorsOnCall(ctx)
 		if err != nil {
 			return err
 		}

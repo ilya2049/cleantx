@@ -3,7 +3,6 @@ package pgsql
 import (
 	"context"
 	"errors"
-	"log"
 
 	"cleantx/internal/domain"
 
@@ -18,10 +17,6 @@ func NewDoctorRepository(db commandExecutor) *DoctorRepository {
 	return &DoctorRepository{
 		db: db,
 	}
-}
-
-func (r *DoctorRepository) withTx(tx commandExecutor) domain.DoctorRepository {
-	return NewDoctorRepository(tx)
 }
 
 func (r *DoctorRepository) Get(ctx context.Context, id int) (*domain.Doctor, error) {
@@ -79,28 +74,4 @@ func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctor
 	}
 
 	return doctors, nil
-}
-
-func (r *DoctorRepository) Atomic(
-	ctx context.Context,
-	doAtomically func(context.Context, domain.DoctorRepository) error,
-) (err error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if err != nil {
-			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
-				log.Println("failed to finish shift: failed to rollback tx", err.Error())
-			}
-
-			return
-		}
-
-		err = tx.Commit(ctx)
-	}()
-
-	return doAtomically(ctx, r.withTx(tx))
 }
