@@ -32,7 +32,7 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 }
 
 func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
-	return e.repository.WithTx(ctx, func(ctx context.Context, tx domain.DoctorRepository) error {
+	return e.repository.Atomic(ctx, func(ctx context.Context, tx domain.DoctorRepository) error {
 		doctorsOnCall, err := tx.ListDoctorsOnCall(ctx)
 		if err != nil {
 			return err

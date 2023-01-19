@@ -81,7 +81,7 @@ func (r *DoctorRepository) ListDoctorsOnCall(ctx context.Context) (domain.Doctor
 	return doctors, nil
 }
 
-func (r *DoctorRepository) WithTx(
+func (r *DoctorRepository) Atomic(
 	ctx context.Context,
 	doAtomically func(context.Context, domain.DoctorRepository) error,
 ) (err error) {
