@@ -6,17 +6,22 @@ import (
 	"cleantx/internal/domain"
 )
 
-type DoctorCommandExecutor struct {
+type DoctorCommandExecutor interface {
+	TakeShift(ctx context.Context, doctorID int) error
+	FinishShift(ctx context.Context, doctorID int) error
+}
+
+type doctorCommandExecutor struct {
 	repository domain.DoctorRepository
 }
 
-func NewDoctorCommandExecutor(repository domain.DoctorRepository) *DoctorCommandExecutor {
-	return &DoctorCommandExecutor{
+func NewDoctorCommandExecutor(repository domain.DoctorRepository) DoctorCommandExecutor {
+	return &doctorCommandExecutor{
 		repository: repository,
 	}
 }
 
-func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) error {
+func (e *doctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) error {
 	doctor, err := e.repository.Get(ctx, doctorID)
 	if err != nil {
 		return err
@@ -31,7 +36,7 @@ func (e *DoctorCommandExecutor) TakeShift(ctx context.Context, doctorID int) err
 	return nil
 }
 
-func (e *DoctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
+func (e *doctorCommandExecutor) FinishShift(ctx context.Context, doctorID int) error {
 	doctorsOnCall, err := e.repository.ListDoctorsOnCall(ctx)
 	if err != nil {
 		return err
